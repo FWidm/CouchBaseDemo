@@ -1,5 +1,5 @@
 <resources>
     <string name="app_name">CouchBaseDemo</string>
     <string name="required_fields_login">Please fill in all required fields!</string>
-    <string name="logging_in">Trying to login as User: </string>
+    <string name="logged_in">Auth succeeded!</string>
 </resources>

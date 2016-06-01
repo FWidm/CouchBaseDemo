@@ -7,11 +7,17 @@ import com.couchbase.lite.CouchbaseLiteException;
 import com.couchbase.lite.Database;
 import com.couchbase.lite.Document;
 import com.couchbase.lite.Manager;
+import com.couchbase.lite.Query;
+import com.couchbase.lite.QueryEnumerator;
+import com.couchbase.lite.QueryRow;
 import com.couchbase.lite.UnsavedRevision;
 import com.couchbase.lite.android.AndroidContext;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -20,6 +26,25 @@ import java.util.Map;
 public class CouchBaseManager {
     public final String TAG = "CBDemoActivity>DBM";
     private Manager manager;
+
+    public List<Document> getAllDocuments(Database database) throws CouchbaseLiteException {
+        // Let's find the documents that have conflicts so we can resolve them:
+        List<Document> retList=new ArrayList<>();
+        Query query = database.createAllDocumentsQuery();
+        query.setAllDocsMode(Query.AllDocsMode.ALL_DOCS);
+        QueryEnumerator result = query.run();
+        for (Iterator<QueryRow> it = result; it.hasNext(); ) {
+            QueryRow row = it.next();
+            if (row.getConflictingRevisions().size() > 0) {
+                Log.w(TAG, "Conflict in document:"+ row.getDocumentId());
+                //beginConflictResolution(row.getDocument());
+            }
+            else{
+               retList.add(row.getDocument());
+            }
+        }
+        return retList;
+    }
 
     /**
      * Retrieves the document by the ID
@@ -119,6 +144,7 @@ public class CouchBaseManager {
 
     /**
      * Initializes the manager instance.
+     * @param context
      * @throws IOException
      */
     public void initializeManagerInstance(AndroidContext context) throws IOException {

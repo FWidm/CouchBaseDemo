@@ -19,6 +19,7 @@ import java.text.SimpleDateFormat;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import de.uulm.amae.couchbasedemo.db.CouchBaseManager;
@@ -54,19 +55,36 @@ public class MainActivity extends Activity {
             e.printStackTrace();
         }
 
-        //initialize database with initial login
+        boolean createTestEntry=true;
+        String email="t@t.com", password="12345";
+
+        //TODO: Find an alternative way to detect duplicate emails, this looks ugly and not performant
+        try {
+            List<Document> userDocuments=cbm.getAllDocuments(users);
+            for(Document d:userDocuments){
+                if(d.getProperty("email")==email)
+                    createTestEntry=false;
+            }
+        } catch (CouchbaseLiteException e) {
+            e.printStackTrace();
+        }
+
+        if(createTestEntry){
+            String docId=createTestEntry(email,password);
+            Log.d(TAG,"Document id for credentials is: "+docId);
+
+            Document document=cbm.retrieveDocumentByID(users,docId);
+
+            Log.d(TAG,"Reading doc: "+document.getProperties());
+        }
+    }
+
+    private String createTestEntry(String email, String pwd){
         Map<String,Object> content=new HashMap<>();
         content.put("email","t@t.com");
         content.put("password","12345");
 
-        String docId=cbm.createDocument(users,content);
-
-        Log.d(TAG,"Document id for credentials is: "+docId);
-
-        Document document=cbm.retrieveDocumentByID(users,docId);
-
-        Log.d(TAG,"Reading doc: "+document.getProperties());
-
+        return cbm.createDocument(users,content);
     }
 
     /**
@@ -90,9 +108,19 @@ public class MainActivity extends Activity {
             }
             currentUser = new User(email, passwd);
 
-            String loggingIn = getResources().getString(R.string.logging_in);
-            Toast toast = Toast.makeText(getApplicationContext(), loggingIn + currentUser, Toast.LENGTH_LONG);
-            toast.show();
+            String msg = getResources().getString(R.string.logged_in);
+            try {
+                List<Document> userDocuments=cbm.getAllDocuments(users);
+                for(Document d:userDocuments){
+                    if(d.getProperty("email").equals(email) && d.getProperty("password").equals(passwd)){
+                        Toast toast = Toast.makeText(getApplicationContext(), msg + currentUser, Toast.LENGTH_LONG);
+                        toast.show();
+                    }
+                }
+            } catch (CouchbaseLiteException e) {
+                e.printStackTrace();
+            }
+
         }
 
     }
